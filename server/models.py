@@ -25,9 +25,10 @@ class Activity(db.Model, SerializerMixin):
     difficulty = db.Column(db.Integer)
 
     # Add relationship
-    
+    signups = db.relationship('Signup', backref="activity", cascade="all, delete-orphan")
     # Add serialization rules
-    
+    serialize_rules = ("-signups.activity", )
+
     def __repr__(self):
         return f'<Activity {self.id}: {self.name}>'
 
@@ -40,12 +41,24 @@ class Camper(db.Model, SerializerMixin):
     age = db.Column(db.Integer)
 
     # Add relationship
-    
+    signups = db.relationship('Signup', backref="camper", cascade="all, delete-orphan")
     # Add serialization rules
-    
+    serialize_rules = ("-signups.camper", )
+    # serialize_only = ("id", "age", "name")
     # Add validation
-    
-    
+    @validates('name')
+    def validate_name(self, key, value):
+        if not value:
+            raise ValueError("Name cannot be blank")
+        return value
+    @validates('age')
+    def validate_age(self, key, value):
+        if 8<= int(value) <= 18:
+            return value
+        else:
+            raise ValueError("Age must be between 8 and 18")
+
+
     def __repr__(self):
         return f'<Camper {self.id}: {self.name}>'
 
@@ -55,13 +68,22 @@ class Signup(db.Model, SerializerMixin):
 
     id = db.Column(db.Integer, primary_key=True)
     time = db.Column(db.Integer)
+    camper_id = db.Column(db.Integer, db.ForeignKey('campers.id'))
+    activity_id = db.Column(db.Integer, db.ForeignKey('activities.id'))
 
     # Add relationships
-    
+    # camper = db.relationship('Camper', backref = 'signups')
+    # activity = db.relationship('Activity', backref='signups')
     # Add serialization rules
-    
+    serialize_rules = ("-activity.signups", "-camper.signups", )
     # Add validation
-    
+    @validates('time')
+    def validate_time(self, key, value):
+        if 0<=int(value)<=23:
+            return value
+        else:
+            raise ValueError("Time must be between 0 and 23")
+
     def __repr__(self):
         return f'<Signup {self.id}>'
 
